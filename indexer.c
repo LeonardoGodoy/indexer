@@ -165,7 +165,30 @@ void freedon(Node node, int *count){
     *count = *count + 1;
 }
 
-int main(){
+int main(int argc, char *argv[]){
+
+  char* command = argv[1];
+  printf("Comando: %s\n", command);
+
+  if (!strcmp(command, "--freq") || !strcmp(command, "-f")) {
+    int number = strtol(argv[2], NULL, 10);
+    char* path = argv[3];
+    printf("The %d most frequent words in %s\n\n", number, path);
+    // call method
+
+  } else if (!strcmp(command, "--freq-word") || !strcmp(command, "-fw")) {
+    char* w = argv[2];
+    printf("Repetitions of the word %s\n\n", w);
+    // call method
+
+  } else if (!strcmp(command, "--search") || !strcmp(command, "-s")) {
+    char* term = argv[2];
+    printf("Search for %s on \n\n", term);
+
+    // call method
+  }
+
+
 
   struct timeval time;
   long int start;
