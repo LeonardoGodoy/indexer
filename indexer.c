@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include "file_reader.h"
 
 #define true 1
 #define false 0
@@ -13,6 +14,8 @@ struct node {
   Node next;
   Node son;
  };
+
+// # TODO: Comparar com letras minusculas
 
 struct timeval time;
 long int start;
@@ -131,33 +134,6 @@ int count_word(Node head, char* word){
   }
 }
 
-
-char* read_file(char* path){
-  char *source = NULL;
-  FILE *fp = fopen(path, "r");
-  if (fp != NULL) {
-    if (fseek(fp, 0L, SEEK_END) == 0) {
-      long bufsize = ftell(fp);
-      printf("Long: %d\n", bufsize);
-      if (bufsize == -1) { /* Error */ }
-
-      source = malloc(sizeof(char) * (bufsize + 1));
-      if (fseek(fp, 0L, SEEK_SET) != 0) { /* Error */ }
-
-      size_t newLen = fread(source, sizeof(char), bufsize, fp);
-      if ( ferror( fp ) != 0 ) {
-          fputs("Error reading file", stderr);
-      } else {
-        int len = (int)newLen;
-        *(source + (--len)) = '\0';
-      }
-    }
-    fclose(fp);
-  }
-
-  return source;
-}
-
 void freedon(Node node){
   if(node->next){
     freedon(node->next);
@@ -187,44 +163,54 @@ void print_options(){
   printf("-s\t--search TERMO ARQUIVO [ARQUIVO ...]\n");
 }
 
+int is_selected(char* command, char* option, char* short_option){
+  return (!strcmp(command, option) || !strcmp(command, short_option));
+}
 
 
 Node mount(char* file){
-  char* buffer = read_file(file);
-  int length = strlen(buffer);
-  printf("Size: %d\n", length);
+  Buffer buffer = create_buffer(file);
+  Node head = create_node('a');
 
   int i = 0;
+  char* word = malloc(40* sizeof(char));
   int word_count = 0;
   char letter;
-  char* word = malloc(40* sizeof(char));
+  long int buff_size = 6;
 
-  Node head = create_node('a');
-  for (i = 0; i < length; i++) {
-    letter = *(buffer+i);
+  char* content;
+  do {
+    content = read_file(buffer, buff_size);
+    printf("%s\n", content);
 
-    if (letter > 64 && letter < 89) {
-      letter = letter + 32;
+    int length = strlen(content);
+    printf("Size: %d\n", length);
 
+    for (i = 0; i < length; i++) {
+      letter = *(content+i);
+
+      if (letter > 64 && letter < 89) {
+        letter = letter + 32;
+
+      }
+      if (letter > 96 && letter < 123) {
+        *(word+word_count) = letter;
+        word_count++;
+
+      } else if(letter == ' ') {
+        *(word+word_count) = '\0';
+        add_word(head, word);
+        word_count = 0;
+      }
     }
-    if (letter > 96 && letter < 123) {
-      *(word+word_count) = letter;
-      word_count++;
-
-    } else if(letter == ' ') {
-      *(word+word_count) = '\0';
-      add_word(head, word);
-      word_count = 0;
-
-    }
-  }
+  } while (buffer->point < buffer->size);
   *(word+word_count) = '\0';
   add_word(head, word);
-  return head;
-}
 
-int is_selected(char* command, char* option, char* short_option){
-  return (!strcmp(command, option) || !strcmp(command, short_option));
+  printf("File size: %d\n", buffer->size);
+  printf("File point: %d\n", buffer->point);
+
+  return head;
 }
 
 
