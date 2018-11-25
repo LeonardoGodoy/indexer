@@ -169,7 +169,7 @@ int is_selected(char* command, char* option, char* short_option){
 
 
 Node mount(char* file){
-  long int buff_size = 1000;
+  long int buff_size = 5000;
   Buffer buffer = create_buffer(file, buff_size);
 
   Node head = create_node('a');
