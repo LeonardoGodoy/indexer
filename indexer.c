@@ -27,7 +27,7 @@ Node create_node(char letter){
   return node;
 }
 
-Node find(Node node, char letter, int* success){
+Node find_brother(Node node, char letter, int* success){
   Node previous;
 
   for (node; node; node = node->next){
@@ -43,7 +43,7 @@ Node find(Node node, char letter, int* success){
 
 Node find_or_create_brother(Node node, char letter){
   int success;
-  Node result = find(node, letter, &success);
+  Node result = find_brother(node, letter, &success);
   if (success) { return result; }
 
   Node next = create_node(letter);
@@ -100,7 +100,7 @@ void print_word(Node head, char* word){
   for (i; i < strlen(word); i++) {
     char letter = *(word + i);
 
-    letter_node = find(letter_node, letter, &success);
+    letter_node = find_brother(letter_node, letter, &success);
     printf("%d: %c\n", i, letter_node->letter);
     letter_node = letter_node->son;
   }
@@ -119,7 +119,7 @@ int count_word(Node head, char* word){
 
   for (i; i < length; i++) {
     char letter = *(word + i);
-    letter_node = find(letter_node, letter, &success);
+    letter_node = find_brother(letter_node, letter, &success);
 
     if(!success) { return 0; }
     if(i == length-1) { return letter_node->count; }
