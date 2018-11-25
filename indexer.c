@@ -14,6 +14,10 @@ struct node {
   Node son;
  };
 
+struct timeval time;
+long int start;
+long int end;
+
 int tot = 0;
 
 Node create_node(char letter){
@@ -164,6 +168,18 @@ void freedon(Node node){
   free(node);
 }
 
+void start_time(){
+  gettimeofday (&time, NULL);
+  start = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+}
+
+void end_time(){
+  gettimeofday (&time, NULL);
+  end = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+
+  printf ("\nFinalized in %ld milliseconds.\n\n", end - start);
+}
+
 void print_options(){
   printf("You have to specify some option\n");
   printf("-f\t--freq N ARQUIVO\n");
@@ -183,7 +199,6 @@ void freq_word(char* word){
 void relevance(char* term){ // missing files
   printf("We are sorry. This is not ready yet.\n");
 }
-
 
 int main(int argc, char *argv[]){
   if (argc == 1) {
@@ -219,12 +234,7 @@ int main(int argc, char *argv[]){
   }
 
 
-  struct timeval time;
-  long int start;
-  long int end;
-
-  gettimeofday (&time, NULL);
-  start = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+  start_time();
 
   Node head = create_node('a');
   char* buffer = read_file("101.txt");
@@ -265,15 +275,10 @@ int main(int argc, char *argv[]){
   int c = count_word(head, "not");
   printf("%s -> %dx\n", "not", c);
 
-  gettimeofday (&time, NULL);
-  end = (time.tv_sec * 1000) + (time.tv_usec / 1000);
-
-  // Print execution time in milliseconds
-  printf ("\nDone in %ld ms!\n\n", end - start);
+  end_time();
 
   freedon(head);
   printf("Total: %d\n", tot);
-
 
   free(word);
   printf("\n\nend");
