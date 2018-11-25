@@ -179,7 +179,6 @@ Node mount(char* file){
   int word_count = 0;
   char letter;
 
-  int a = 1000;
   char* content;
   do {
     read_file(buffer);
@@ -230,7 +229,6 @@ void freq_word(char* word, char* file){
   printf("%s -> %dx\n", word, c);
 
   end_time();
-
   freedon(node);
 }
 
