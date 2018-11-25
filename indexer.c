@@ -188,12 +188,60 @@ void print_options(){
 }
 
 
+
+Node mount(char* file){
+  char* buffer = read_file(file);
+  int length = strlen(buffer);
+  printf("Size: %d\n", length);
+
+  int i = 0;
+  int word_count = 0;
+  char letter;
+  char* word = malloc(40* sizeof(char));
+
+  Node head = create_node('a');
+  for (i = 0; i < length; i++) {
+    letter = *(buffer+i);
+
+    if (letter > 64 && letter < 89) {
+      letter = letter + 32;
+
+    }
+    if (letter > 96 && letter < 123) {
+      *(word+word_count) = letter;
+      word_count++;
+
+    } else if(letter == ' ') {
+      *(word+word_count) = '\0';
+      add_word(head, word);
+      word_count = 0;
+
+    }
+  }
+  *(word+word_count) = '\0';
+  add_word(head, word);
+  return head;
+}
+
+int is_selected(char* command, char* option, char* short_option){
+  return (!strcmp(command, option) || !strcmp(command, short_option));
+}
+
+
 void freq(int number, char* path){
   printf("We are sorry. This is not ready yet.\n");
 }
 
-void freq_word(char* word){
+void freq_word(char* word, char* file){
+  start_time();
 
+  Node node = mount(file);
+  int c = count_word(node, word);
+  printf("%s -> %dx\n", word, c);
+
+  end_time();
+
+  freedon(node);
 }
 
 void relevance(char* term){ // missing files
@@ -208,78 +256,29 @@ int main(int argc, char *argv[]){
 
   char* command = argv[1];
 
-  if (!strcmp(command, "--freq") || !strcmp(command, "-f")) {
+  if (is_selected(command, "--freq", "-f")) {
     int number = strtol(argv[2], NULL, 10);
     char* path = argv[3];
     printf("The %d most frequent words in %s\n\n", number, path);
 
     freq(number, path);
-    exit(0);
 
-  } else if (!strcmp(command, "--freq-word") || !strcmp(command, "-fw")) {
+  } else if (is_selected(command, "--freq-word", "-fw")) {
     char* w = argv[2];
-    printf("Repetitions of the word %s\n\n", w);
-    freq_word(w);
+    char* path = argv[3];
 
-  } else if (!strcmp(command, "--search") || !strcmp(command, "-s")) {
+    printf("Repetitions of the word \"%s\"\n\n", w);
+    freq_word(w, path);
+
+  } else if (is_selected(command, "--search", "-s")) {
     char* term = argv[2];
     printf("Search for %s on \n\n", term);
 
     relevance(term);
-    exit(0);
 
   } else {
     printf("Option \"%s\" not available!\n\n", command);
-    exit(0);
   }
 
-
-  start_time();
-
-  Node head = create_node('a');
-  char* buffer = read_file("101.txt");
-
-  int length = strlen(buffer);
-  printf("Size: %d\n", length);
-
-  char letter;
-
-  int i = 0;
-
-  int word_count = 0;
-  char* word = malloc(40* sizeof(char));
-
-  for (i = 0; i < length; i++) {
-    letter = *(buffer+i);
-    if (letter > 64 && letter < 89) {
-      letter = letter + 32;
-    }
-
-    if (letter > 96 && letter < 123) {
-      *(word+word_count) = letter;
-      word_count++;
-
-    } else if(letter == ' ') {
-      *(word+word_count) = '\0';
-      //printf("-PALAVRA: %s\n", word);
-      add_word(head, word);
-      word_count = 0;
-    }
-  }
-
-  *(word+word_count) = '\0';
-  add_word(head, word);
-  //printf("-PALAVRA: %s\n", word);
-
-
-  int c = count_word(head, "not");
-  printf("%s -> %dx\n", "not", c);
-
-  end_time();
-
-  freedon(head);
-  printf("Total: %d\n", tot);
-
-  free(word);
-  printf("\n\nend");
+  printf("\nGoodbye o/\n");
 }
