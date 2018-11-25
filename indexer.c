@@ -153,16 +153,14 @@ char* read_file(char* path){
   return source;
 }
 
-
-void freedon(Node node, int *count){
-    if(node->next){
-      freedon(node->next, count);
-    }
-    if(node->son){
-      freedon(node->son, count);
-    }
-    free(node);
-    *count = *count + 1;
+void freedon(Node node){
+  if(node->next){
+    freedon(node->next);
+  }
+  if(node->son){
+    freedon(node->son);
+  }
+  free(node);
 }
 
 int main(int argc, char *argv[]){
@@ -242,8 +240,7 @@ int main(int argc, char *argv[]){
   // Print execution time in milliseconds
   printf ("\nDone in %ld ms!\n\n", end - start);
 
-  int count = 0;
-  freedon(head, &count);
+  freedon(head);
   printf("Free: %d\n", count);
   printf("Total: %d\n", tot);
 
