@@ -169,29 +169,31 @@ int is_selected(char* command, char* option, char* short_option){
 
 
 Node mount(char* file){
-  Buffer buffer = create_buffer(file);
+  long int buff_size = 1000;
+  Buffer buffer = create_buffer(file, buff_size);
+
   Node head = create_node('a');
 
   int i = 0;
-  char* word = malloc(40* sizeof(char));
+  char* word = malloc(1000* sizeof(char));
   int word_count = 0;
   char letter;
-  long int buff_size = 6;
 
+  int a = 1000;
   char* content;
   do {
-    content = read_file(buffer, buff_size);
-    printf("%s\n", content);
+    read_file(buffer);
+    content = buffer->content;
+    // printf("%s\n", content);
 
     int length = strlen(content);
-    printf("Size: %d\n", length);
+    //printf("Size: %d\n", length);
 
     for (i = 0; i < length; i++) {
       letter = *(content+i);
 
       if (letter > 64 && letter < 89) {
-        letter = letter + 32;
-
+        letter += 32;
       }
       if (letter > 96 && letter < 123) {
         *(word+word_count) = letter;
@@ -203,12 +205,14 @@ Node mount(char* file){
         word_count = 0;
       }
     }
-  } while (buffer->point < buffer->size);
+  } while (buffer->cursor < buffer->file_size);
   *(word+word_count) = '\0';
   add_word(head, word);
 
-  printf("File size: %d\n", buffer->size);
-  printf("File point: %d\n", buffer->point);
+  free(content);
+
+  printf("File size: %d\n", buffer->file_size);
+  printf("File point: %d\n", buffer->cursor);
 
   return head;
 }
