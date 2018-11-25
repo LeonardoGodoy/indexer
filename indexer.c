@@ -8,10 +8,10 @@
 
 typedef struct node *Node;
 struct node {
-    char letter;
-    int count;
-    Node next;
-    Node son;
+  char letter;
+  int count;
+  Node next;
+  Node son;
  };
 
 int tot = 0;
@@ -25,6 +25,17 @@ Node create_node(char letter){
 
   tot++;
   return node;
+}
+
+void create_cascade(Node head, char* word, int i, int length){
+  char letter = *(word + i);
+  Node son = create_node(letter);
+  head->son = son;
+  if (++i < length) {
+    create_cascade(son, word, i, length);
+  } else {
+    son->count++;
+  }
 }
 
 Node find_brother(Node node, char letter, int* success){
@@ -51,15 +62,9 @@ Node find_or_create_brother(Node node, char letter){
   return next;
 }
 
-void create_cascade(Node head, char* word, int i, int length){
-  char letter = *(word + i);
-  Node son = create_node(letter);
-  head->son = son;
-  if (++i < length) {
-    create_cascade(son, word, i, length);
-  } else {
-    son->count++;
-  }
+Node find_or_create_son(Node node, char letter){
+  if(!node->son){ return node->son = create_node(letter); }
+  return node->son = find_or_create_brother(node->son, letter);
 }
 
 void add_word(Node head, char* word){
@@ -106,11 +111,6 @@ void print_word(Node head, char* word){
   }
 }
 
-Node find_or_create_son(Node node, char letter){
-  if(!node->son){ return node->son = create_node(letter); }
-  return node->son = find_or_create_brother(node->son, letter);
-}
-
 int count_word(Node head, char* word){
   int i = 0;
   int success = 0;
@@ -127,27 +127,28 @@ int count_word(Node head, char* word){
   }
 }
 
+
 char* read_file(char* path){
   char *source = NULL;
   FILE *fp = fopen(path, "r");
   if (fp != NULL) {
     if (fseek(fp, 0L, SEEK_END) == 0) {
-        long bufsize = ftell(fp);
-        printf("Long: %d\n", bufsize);
-        if (bufsize == -1) { /* Error */ }
+      long bufsize = ftell(fp);
+      printf("Long: %d\n", bufsize);
+      if (bufsize == -1) { /* Error */ }
 
-        source = malloc(sizeof(char) * (bufsize + 1));
-        if (fseek(fp, 0L, SEEK_SET) != 0) { /* Error */ }
+      source = malloc(sizeof(char) * (bufsize + 1));
+      if (fseek(fp, 0L, SEEK_SET) != 0) { /* Error */ }
 
-        size_t newLen = fread(source, sizeof(char), bufsize, fp);
-        if ( ferror( fp ) != 0 ) {
-            fputs("Error reading file", stderr);
-        } else {
-          int len = (int)newLen;
-          *(source + (--len)) = '\0';
-        }
+      size_t newLen = fread(source, sizeof(char), bufsize, fp);
+      if ( ferror( fp ) != 0 ) {
+          fputs("Error reading file", stderr);
+      } else {
+        int len = (int)newLen;
+        *(source + (--len)) = '\0';
       }
-      fclose(fp);
+    }
+    fclose(fp);
   }
 
   return source;
@@ -170,6 +171,20 @@ void print_options(){
   printf("-s\t--search TERMO ARQUIVO [ARQUIVO ...]\n");
 }
 
+
+void freq(int number, char* path){
+  printf("We are sorry. This is not ready yet.\n");
+}
+
+void freq_word(char* word){
+
+}
+
+void relevance(char* term){ // missing files
+  printf("We are sorry. This is not ready yet.\n");
+}
+
+
 int main(int argc, char *argv[]){
   if (argc == 1) {
     print_options();
@@ -177,31 +192,31 @@ int main(int argc, char *argv[]){
   }
 
   char* command = argv[1];
-  printf("Comando: %s\n", command);
 
   if (!strcmp(command, "--freq") || !strcmp(command, "-f")) {
     int number = strtol(argv[2], NULL, 10);
     char* path = argv[3];
     printf("The %d most frequent words in %s\n\n", number, path);
-    // call method
+
+    freq(number, path);
+    exit(0);
 
   } else if (!strcmp(command, "--freq-word") || !strcmp(command, "-fw")) {
     char* w = argv[2];
     printf("Repetitions of the word %s\n\n", w);
-    // call method
+    freq_word(w);
 
   } else if (!strcmp(command, "--search") || !strcmp(command, "-s")) {
     char* term = argv[2];
     printf("Search for %s on \n\n", term);
 
-    // call method
+    relevance(term);
+    exit(0);
+
   } else {
-    printf("Option %s not available!\n", command);
+    printf("Option \"%s\" not available!\n\n", command);
     exit(0);
   }
-
-
-
 
 
   struct timeval time;
@@ -262,28 +277,4 @@ int main(int argc, char *argv[]){
 
   free(word);
   printf("\n\nend");
-}
-
-
-
-
-
-
-
-void test(Node head){
-  print_tree(head);
-
-  add_word(head, "lets");
-  add_word(head, "get");
-  add_word(head, "it");
-  add_word(head, "started");
-
-  add_word(head, "exemplo");
-  add_word(head, "exemplo");
-  add_word(head, "exemplo");
-  add_word(head, "exemplos");
-
-  char* word  = "exemplo";
-  int c = count_word(head, word);
-  printf("%s -> %dx\n", word, c);
 }
