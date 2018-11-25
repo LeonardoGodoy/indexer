@@ -163,7 +163,18 @@ void freedon(Node node){
   free(node);
 }
 
+void print_options(){
+  printf("You have to specify some option\n");
+  printf("-f\t--freq N ARQUIVO\n");
+  printf("-fw\t--freq-word PALAVRA ARQUIVO\n");
+  printf("-s\t--search TERMO ARQUIVO [ARQUIVO ...]\n");
+}
+
 int main(int argc, char *argv[]){
+  if (argc == 1) {
+    print_options();
+    exit(0);
+  }
 
   char* command = argv[1];
   printf("Comando: %s\n", command);
@@ -184,7 +195,12 @@ int main(int argc, char *argv[]){
     printf("Search for %s on \n\n", term);
 
     // call method
+  } else {
+    printf("Option %s not available!\n", command);
+    exit(0);
   }
+
+
 
 
 
@@ -241,7 +257,6 @@ int main(int argc, char *argv[]){
   printf ("\nDone in %ld ms!\n\n", end - start);
 
   freedon(head);
-  printf("Free: %d\n", count);
   printf("Total: %d\n", tot);
 
 
