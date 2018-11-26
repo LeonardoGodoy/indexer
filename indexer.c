@@ -15,8 +15,6 @@ struct node {
   Node son;
  };
 
-// # TODO: Comparar com letras minusculas
-
 struct timeval time;
 long int start;
 long int end;
@@ -34,14 +32,15 @@ Node create_node(char letter){
   return node;
 }
 
-void create_cascade(Node head, char* word, int i, int length){
+Node create_cascade(Node head, char* word, int i, int length){
   char letter = *(word + i);
   Node son = create_node(letter);
   head->son = son;
   if (++i < length) {
-    create_cascade(son, word, i, length);
+    return create_cascade(son, word, i, length);
   } else {
     son->count++;
+    return son;
   }
 }
 
@@ -74,7 +73,7 @@ Node find_or_create_son(Node node, char letter){
   return node->son = find_or_create_brother(node->son, letter);
 }
 
-void add_word(Node head, char* word){
+Node add_word(Node head, char* word){
   int i = 0;
   char letter;
   int length = strlen(word);
@@ -87,11 +86,11 @@ void add_word(Node head, char* word){
     if(i == length-1){
       letter_node->count++;
     } else if(!letter_node->son){
-      create_cascade(letter_node, word, ++i, length);
-      return;
+      return create_cascade(letter_node, word, ++i, length);
     }
     letter_node = letter_node->son;
   }
+  return NULL;
 }
 
 void print_tree(Node node){
@@ -126,6 +125,10 @@ int count_word(Node head, char* word){
 
   for (i; i < length; i++) {
     char letter = *(word + i);
+    if (letter > 64 && letter < 89) {
+      letter += 32;
+    }
+
     letter_node = find_brother(letter_node, letter, &success);
 
     if(!success) { return 0; }
@@ -168,11 +171,12 @@ int is_selected(char* command, char* option, char* short_option){
 }
 
 
-Node mount(char* file){
+Node mount(char* file, int* total){
   long int buff_size = 5000;
   Buffer buffer = create_buffer(file, buff_size);
 
   Node head = create_node('a');
+  Node aux;
 
   int i = 0;
   char* word = malloc(1000* sizeof(char));
@@ -183,36 +187,28 @@ Node mount(char* file){
   do {
     read_file(buffer);
     content = buffer->content;
-    // printf("%s\n", content);
-
     int length = strlen(content);
-    //printf("Size: %d\n", length);
 
     for (i = 0; i < length; i++) {
       letter = *(content+i);
 
-      if (letter > 64 && letter < 89) {
-        letter += 32;
-      }
+      if (letter > 64 && letter < 89) { letter += 32; }
       if (letter > 96 && letter < 123) {
         *(word+word_count) = letter;
         word_count++;
 
       } else if(letter == ' ') {
         *(word+word_count) = '\0';
-        add_word(head, word);
+        if (add_word(head, word)) { *total+=1; }
         word_count = 0;
       }
     }
   } while (buffer->cursor < buffer->file_size);
+
   *(word+word_count) = '\0';
-  add_word(head, word);
+  if (add_word(head, word)) { *total+=1; }
 
   free(content);
-
-  printf("File size: %d\n", buffer->file_size);
-  printf("File point: %d\n", buffer->cursor);
-
   return head;
 }
 
@@ -224,15 +220,39 @@ void freq(int number, char* path){
 void freq_word(char* word, char* file){
   start_time();
 
-  Node node = mount(file);
+  int total = 0;
+  Node node = mount(file, &total);
   int c = count_word(node, word);
-  printf("%s -> %dx\n", word, c);
+  printf("Repetitions: %dx\n", c);
+  printf("Words: %d\n", total);
+
 
   end_time();
   freedon(node);
 }
 
-void relevance(char* term){ // missing files
+void relevance(char* term, char**files, int file_count){
+
+  start_time();
+  int i = 0;
+  char* file;
+
+  for (i; i < file_count-1; i++) {
+    file = *(files+i);
+    int total = 0;
+    Node node = mount(file, &total);
+
+    int count = count_word(node, term);
+    printf("Repetitions: %dx\n", count);
+    printf("Words: %d\n", total);
+
+    double tf = (double)count / (double)total;
+    printf("TF: %f\n", tf);
+    freedon(node);
+  }
+
+  end_time();
+
   printf("We are sorry. This is not ready yet.\n");
 }
 
@@ -260,9 +280,16 @@ int main(int argc, char *argv[]){
 
   } else if (is_selected(command, "--search", "-s")) {
     char* term = argv[2];
-    printf("Search for %s on \n\n", term);
+    int file_count = argc-2;
 
-    relevance(term);
+    int i;
+    char** files = malloc(file_count * sizeof(char*));
+    for (i = 3; i < argc; i++) {
+      *(files+i-3) = *(argv+i);
+    }
+
+    printf("Search for %s on \n\n", term);
+    relevance(term, files, file_count);
 
   } else {
     printf("Option \"%s\" not available!\n\n", command);
