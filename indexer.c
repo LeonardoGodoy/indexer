@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <sys/time.h>
 #include "file_reader.h"
 
@@ -20,9 +21,26 @@ long int start;
 long int end;
 
 int tot = 0;
+int node_number = 5000;
+Node nodes;
+
+
+// Malloc by bath to make it faster
+// Double free ?
+
+Node get_instance(){
+  Node node;
+  if (node_number > 4999) {
+    node_number = 0;
+    nodes = malloc(5000 * sizeof *node);
+  }
+  node = (nodes + node_number);
+  ++node_number;
+  return node;
+}
 
 Node create_node(char letter){
-  Node node = malloc(sizeof *node);
+  Node node = malloc(sizeof *node); //get_instance();
   node->letter = letter;
   node->count = 0;
   node->next = NULL;
@@ -138,6 +156,7 @@ int count_word(Node head, char* word){
 }
 
 void freedon(Node node){
+
   if(node->next){
     freedon(node->next);
   }
@@ -226,34 +245,50 @@ void freq_word(char* word, char* file){
   printf("Repetitions: %dx\n", c);
   printf("Words: %d\n", total);
 
-
   end_time();
   freedon(node);
 }
 
-void relevance(char* term, char**files, int file_count){
 
+double term_frequency(char* term, char* file, int* repetitions){
+  int total;
+  Node node = mount(file, &total);
+  *repetitions = count_word(node, term);
+
+  freedon(node);
+  return (double)*repetitions / (double)total;
+}
+
+double inverse_frequency(int file_count, int present){
+  double div = ((double)file_count / (double)present);
+  return log(div);
+}
+
+void relevance(char* term, char**files, int file_count){
   start_time();
   int i = 0;
+  int count = 0;
   char* file;
+  double* term_frequencies = malloc(file_count * sizeof(double));
 
-  for (i; i < file_count-1; i++) {
+  printf("File count: %d\n", file_count);
+  for (i; i < file_count; i++) {
     file = *(files+i);
-    int total = 0;
-    Node node = mount(file, &total);
 
-    int count = count_word(node, term);
-    printf("Repetitions: %dx\n", count);
-    printf("Words: %d\n", total);
+    int repetitions;
+    *(term_frequencies+i) = term_frequency(term, file, &repetitions);
+    printf("Repetitions: %d\n", repetitions);
+    if(repetitions){ count++; }
+  }
+  printf("IDF: %f\n", inverse_frequency(file_count, count));
 
-    double tf = (double)count / (double)total;
-    printf("TF: %f\n", tf);
-    freedon(node);
+  double tf;
+  for (i = 0; i < file_count; i++) {
+    tf = *(term_frequencies+i);
+    printf("TF %f\n", tf);
   }
 
   end_time();
-
-  printf("We are sorry. This is not ready yet.\n");
 }
 
 int main(int argc, char *argv[]){
@@ -280,7 +315,7 @@ int main(int argc, char *argv[]){
 
   } else if (is_selected(command, "--search", "-s")) {
     char* term = argv[2];
-    int file_count = argc-2;
+    int file_count = argc-3;
 
     int i;
     char** files = malloc(file_count * sizeof(char*));
@@ -297,3 +332,5 @@ int main(int argc, char *argv[]){
 
   printf("\nGoodbye o/\n");
 }
+
+// # TODO: Create
