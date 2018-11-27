@@ -16,6 +16,15 @@ struct node {
   Node son;
  };
 
+typedef struct relev *Relevance;
+struct relev {
+ char *file;
+ double tf;
+ double tfidf;
+ int frequency;
+};
+
+
 struct timeval time;
 long int start;
 long int end;
@@ -48,6 +57,14 @@ Node create_node(char letter){
 
   tot++;
   return node;
+}
+
+Relevance create_relevance(){
+  Relevance relevance = malloc(sizeof(*relevance));
+  relevance->tf = 0;
+  relevance->tfidf = 0;
+  relevance->frequency = 0;
+  return relevance;
 }
 
 Node create_cascade(Node head, char* word, int i, int length){
@@ -232,6 +249,20 @@ Node mount(char* file, int* total){
 }
 
 
+void term_frequency(char* term, Relevance relevance){
+  int total;
+  Node node = mount(relevance->file, &total);
+
+  relevance->frequency = count_word(node, term);
+  freedon(node);
+  relevance->tf = (double)relevance->frequency / (double)total;
+}
+
+double inverse_frequency(int file_count, int present){
+  double div = ((double)file_count / (double)present);
+  return log(div);
+}
+
 void freq(int number, char* path){
   printf("We are sorry. This is not ready yet.\n");
 }
@@ -249,46 +280,41 @@ void freq_word(char* word, char* file){
   freedon(node);
 }
 
-
-double term_frequency(char* term, char* file, int* repetitions){
-  int total;
-  Node node = mount(file, &total);
-  *repetitions = count_word(node, term);
-
-  freedon(node);
-  return (double)*repetitions / (double)total;
+void print_relevances(Relevance relevances[], int count){
+  int i = 0;
+  Relevance relevance;
+  for (i; i < count; i++) {
+    relevance = *(relevances+i);
+    printf("File %s relevance: %f\n", relevance->file, relevance->tfidf);
+  }
 }
 
-double inverse_frequency(int file_count, int present){
-  double div = ((double)file_count / (double)present);
-  return log(div);
-}
-
-void relevance(char* term, char**files, int file_count){
+void relevance_of_term(char* term, char**files, int file_count){
   start_time();
+
   int i = 0;
   int count = 0;
-  char* file;
-  double* term_frequencies = malloc(file_count * sizeof(double));
 
-  printf("File count: %d\n", file_count);
+  Relevance relevances[file_count];
+  Relevance relevance;
+
   for (i; i < file_count; i++) {
-    file = *(files+i);
-
-    int repetitions;
-    *(term_frequencies+i) = term_frequency(term, file, &repetitions);
-    printf("Repetitions: %d\n", repetitions);
-    if(repetitions){ count++; }
+    relevance = create_relevance();
+    relevance->file = *(files+i);
+    term_frequency(term, relevance);
+    if(relevance->frequency){ count++; }
+    *(relevances+i) = relevance;
   }
-  printf("IDF: %f\n", inverse_frequency(file_count, count));
 
-  double tf;
+  double idf = inverse_frequency(file_count, count);
+
   for (i = 0; i < file_count; i++) {
-    tf = *(term_frequencies+i);
-    printf("TF %f\n", tf);
+    relevance = *(relevances+i);
+    relevance->tfidf = relevance->tf * idf;
   }
-
   end_time();
+
+  print_relevances(relevances, file_count);
 }
 
 int main(int argc, char *argv[]){
@@ -302,7 +328,7 @@ int main(int argc, char *argv[]){
   if (is_selected(command, "--freq", "-f")) {
     int number = strtol(argv[2], NULL, 10);
     char* path = argv[3];
-    printf("The %d most frequent words in %s\n\n", number, path);
+    printf("The %d most frequent words in %s\n", number, path);
 
     freq(number, path);
 
@@ -310,7 +336,7 @@ int main(int argc, char *argv[]){
     char* w = argv[2];
     char* path = argv[3];
 
-    printf("Repetitions of the word \"%s\"\n\n", w);
+    printf("Repetitions of the word \"%s\"\n", w);
     freq_word(w, path);
 
   } else if (is_selected(command, "--search", "-s")) {
@@ -323,8 +349,8 @@ int main(int argc, char *argv[]){
       *(files+i-3) = *(argv+i);
     }
 
-    printf("Search for %s on \n\n", term);
-    relevance(term, files, file_count);
+    printf("Searching for \"%s\" \n", term);
+    relevance_of_term(term, files, file_count);
 
   } else {
     printf("Option \"%s\" not available!\n\n", command);
