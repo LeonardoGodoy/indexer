@@ -26,3 +26,5 @@ void push_word_ordered(Word word, Node node, int size);
 void push_word(Word word, Node node);
 
 void print_frequently_words(Word word);
+
+void free_word(Word word);

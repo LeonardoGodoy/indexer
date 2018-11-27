@@ -70,3 +70,10 @@ void print_frequently_words(Word word){
     new = new->next;
   }
 }
+
+void free_word(Word word){
+  while (word) {
+    free(word);
+    word = word->next;
+  }
+}

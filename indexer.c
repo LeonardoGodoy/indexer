@@ -267,6 +267,8 @@ void freq(int number, char* file){
   print_frequently_words(ordered);
 
   end_time();
+  free_word(word);
+  free_word(ordered);
   freedon(node);
 }
 
