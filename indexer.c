@@ -204,7 +204,7 @@ Node mount(char* file, int* total, Word word){
         son = add_word(head, term);
         if (son) {
           *total+=1;
-          if(word) {
+          if(word && son->count == 1) {
             push_word(word, son);
             word = word->next;
           }
@@ -220,7 +220,7 @@ Node mount(char* file, int* total, Word word){
   son = add_word(head, term);
   if (son) {
     *total+=1;
-    if(word) {
+    if(word && son->count == 1) {
       push_word(word, son);
       word = word->next;
     }
