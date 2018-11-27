@@ -1,19 +1,40 @@
-# Para testar
+
+# Instalation
 
 ```shell
 $ git clone https://github.com/LeonardoGodoy/indexer
+```
+
+```shell
 $ cd indexer
+```
+
+```shell
 $ make
 ```
 
+#### Example
+##### Options
+Run the indexer to see the options available
+
 ```shell
-$ ./indexer -fw palavra caminho_do_arquivo(absoluto)
+$ ./indexer
 ```
 
-#### Exemplo
-
-###### Execute ./indexer mostra as opções disponíveis
+###### Frequent words
 
 ```shell
-$ ./indexer -fw not 101.txt
+$ ./indexer -f 10 101.txt
+```
+
+###### Word frequency
+
+```shell
+$ ./indexer -fw it 101.txt
+```
+
+###### Document relevance
+
+```shell
+$ ./indexer -s it 101.txt 102.txt
 ```
