@@ -45,7 +45,7 @@ Relevance create_relevance(){
 
 Node create_cascade(Node head, char* word, int i, int length){
   char letter = *(word + i);
-  Node son = create_node(letter);
+  Node son = create_node(letter, head);
   head->son = son;
   if (++i < length) {
     return create_cascade(son, word, i, length);
@@ -69,19 +69,19 @@ Node find_brother(Node node, char letter, int* success){
   return previous;
 }
 
-Node find_or_create_brother(Node node, char letter){
+Node find_or_create_brother(Node node, Node dad, char letter){
   int success;
   Node result = find_brother(node, letter, &success);
   if (success) { return result; }
 
-  Node next = create_node(letter);
+  Node next = create_node(letter, dad);
   result->next = next;
   return next;
 }
 
 Node find_or_create_son(Node node, char letter){
-  if(!node->son){ return node->son = create_node(letter); }
-  return node->son = find_or_create_brother(node->son, letter);
+  if(!node->son){ return node->son = create_node(letter, node); }
+  return node->son = find_or_create_brother(node->son, node, letter);
 }
 
 Node add_word(Node head, char* term){
@@ -89,16 +89,18 @@ Node add_word(Node head, char* term){
   char letter;
   int length = strlen(term);
   Node letter_node = head;
+  Node dad = NULL;
 
   for (i; i < length; i++) {
     letter = *(term + i);
-    letter_node = find_or_create_brother(letter_node, letter);
+    letter_node = find_or_create_brother(letter_node, dad, letter);
 
     if(i == length-1){
       letter_node->count++;
     } else if(!letter_node->son){
       return create_cascade(letter_node, term, ++i, length);
     }
+    dad = letter_node;
     letter_node = letter_node->son;
   }
   return NULL;
@@ -173,7 +175,7 @@ Node mount(char* file, int* total, Word word){
   long int buff_size = 5000;
   Buffer buffer = create_buffer(file, buff_size);
 
-  Node head = create_node('a');
+  Node head = create_node('a', NULL);
   Node son;
 
   if(word) { word->node = head; }
@@ -211,6 +213,8 @@ Node mount(char* file, int* total, Word word){
       }
     }
   } while (buffer->cursor < buffer->file_size);
+
+  // # count == 1
 
   *(term+word_count) = '\0';
   son = add_word(head, term);

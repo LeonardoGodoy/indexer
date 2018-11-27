@@ -3,18 +3,18 @@
 #include <string.h>
 #include "counter.h"
 
-Node create_node(char letter){
+Node create_node(char letter, Node dad){
   Node node = malloc(sizeof *node); //get_instance();
   node->letter = letter;
   node->count = 0;
   node->next = NULL;
   node->son = NULL;
-
+  node->dad = dad;
   return node;
 }
 
 Node create_initialized_node(char letter, int count){
-  Node node = create_node(letter);
+  Node node = create_node(letter, NULL);
   node->count = count;
   return node;
 }
@@ -61,13 +61,32 @@ void push_word(Word word, Node node){
 }
 
 void print_frequently_words(Word word){
+  char* term = malloc(1000 * sizeof(char));
   Node node;
   Word new = word;
 
   while (new) {
     node = new->node;
-    printf("%c: %d\n", node->letter, node->count);
+    print_word(node, term);
+    printf("%s: %d\n", term, node->count);
     new = new->next;
+  }
+}
+
+void print_word(Node node, char* word){
+  int wc = 0;
+
+  while (node) {
+    *(word+wc++) = node->letter;
+    node = node->dad;
+  }
+  *(word+wc) = '\0';
+
+  int i = 0;
+  for (i = 0; i < wc/2; i++) {
+    char letter = *(word+i);
+    *(word+i) = *(word+wc-i-1);
+    *(word+wc-i-1) = letter;
   }
 }
 
