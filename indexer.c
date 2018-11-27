@@ -4,17 +4,10 @@
 #include <math.h>
 #include <sys/time.h>
 #include "file_reader.h"
+#include "counter.h"
 
 #define true 1
 #define false 0
-
-typedef struct node *Node;
-struct node {
-  char letter;
-  int count;
-  Node next;
-  Node son;
- };
 
 typedef struct relev *Relevance;
 struct relev {
@@ -24,18 +17,12 @@ struct relev {
  int frequency;
 };
 
-
 struct timeval time;
 long int start;
 long int end;
 
-int tot = 0;
 int node_number = 5000;
 Node nodes;
-
-
-// Malloc by bath to make it faster
-// Double free ?
 
 Node get_instance(){
   Node node;
@@ -45,17 +32,6 @@ Node get_instance(){
   }
   node = (nodes + node_number);
   ++node_number;
-  return node;
-}
-
-Node create_node(char letter){
-  Node node = malloc(sizeof *node); //get_instance();
-  node->letter = letter;
-  node->count = 0;
-  node->next = NULL;
-  node->son = NULL;
-
-  tot++;
   return node;
 }
 
@@ -108,20 +84,20 @@ Node find_or_create_son(Node node, char letter){
   return node->son = find_or_create_brother(node->son, letter);
 }
 
-Node add_word(Node head, char* word){
+Node add_word(Node head, char* term){
   int i = 0;
   char letter;
-  int length = strlen(word);
+  int length = strlen(term);
   Node letter_node = head;
 
   for (i; i < length; i++) {
-    letter = *(word + i);
+    letter = *(term + i);
     letter_node = find_or_create_brother(letter_node, letter);
 
     if(i == length-1){
       letter_node->count++;
     } else if(!letter_node->son){
-      return create_cascade(letter_node, word, ++i, length);
+      return create_cascade(letter_node, term, ++i, length);
     }
     letter_node = letter_node->son;
   }
@@ -136,20 +112,6 @@ void print_tree(Node node){
       printf("%c ", aux->letter);
     }
     printf("\n");
-}
-
-void print_word(Node head, char* word){
-  int i = 0;
-  int success = 0;
-  Node letter_node = head;
-
-  for (i; i < strlen(word); i++) {
-    char letter = *(word + i);
-
-    letter_node = find_brother(letter_node, letter, &success);
-    printf("%d: %c\n", i, letter_node->letter);
-    letter_node = letter_node->son;
-  }
 }
 
 int count_word(Node head, char* word){
@@ -207,15 +169,17 @@ int is_selected(char* command, char* option, char* short_option){
 }
 
 
-Node mount(char* file, int* total){
+Node mount(char* file, int* total, Word word){
   long int buff_size = 5000;
   Buffer buffer = create_buffer(file, buff_size);
 
   Node head = create_node('a');
-  Node aux;
+  Node son;
+
+  if(word) { word->node = head; }
 
   int i = 0;
-  char* word = malloc(1000* sizeof(char));
+  char* term = malloc(1000* sizeof(char));
   int word_count = 0;
   char letter;
 
@@ -230,19 +194,33 @@ Node mount(char* file, int* total){
 
       if (letter > 64 && letter < 89) { letter += 32; }
       if (letter > 96 && letter < 123) {
-        *(word+word_count) = letter;
+        *(term+word_count) = letter;
         word_count++;
 
       } else if(letter == ' ') {
-        *(word+word_count) = '\0';
-        if (add_word(head, word)) { *total+=1; }
+        *(term+word_count) = '\0';
+        son = add_word(head, term);
+        if (son) {
+          *total+=1;
+          if(word) {
+            push_word(word, son);
+            word = word->next;
+          }
+        }
         word_count = 0;
       }
     }
   } while (buffer->cursor < buffer->file_size);
 
-  *(word+word_count) = '\0';
-  if (add_word(head, word)) { *total+=1; }
+  *(term+word_count) = '\0';
+  son = add_word(head, term);
+  if (son) {
+    *total+=1;
+    if(word) {
+      push_word(word, son);
+      word = word->next;
+    }
+  }
 
   free(content);
   return head;
@@ -251,7 +229,7 @@ Node mount(char* file, int* total){
 
 void term_frequency(char* term, Relevance relevance){
   int total;
-  Node node = mount(relevance->file, &total);
+  Node node = mount(relevance->file, &total, NULL);
 
   relevance->frequency = count_word(node, term);
   freedon(node);
@@ -263,23 +241,6 @@ double inverse_frequency(int file_count, int present){
   return log(div);
 }
 
-void freq(int number, char* path){
-  printf("We are sorry. This is not ready yet.\n");
-}
-
-void freq_word(char* word, char* file){
-  start_time();
-
-  int total = 0;
-  Node node = mount(file, &total);
-  int c = count_word(node, word);
-  printf("Repetitions: %dx\n", c);
-  printf("Words: %d\n", total);
-
-  end_time();
-  freedon(node);
-}
-
 void print_relevances(Relevance relevances[], int count){
   int i = 0;
   Relevance relevance;
@@ -287,6 +248,38 @@ void print_relevances(Relevance relevances[], int count){
     relevance = *(relevances+i);
     printf("File %s relevance: %f\n", relevance->file, relevance->tfidf);
   }
+}
+
+void freq(int number, char* file){
+  start_time();
+
+  int total = 0;
+  Word word = create_word(NULL);
+  Node node = mount(file, &total, word);
+
+  Word ordered = create_word(word->node);
+
+  Word aux = word;
+  while (aux) {
+    push_word_ordered(ordered, aux->node, number);
+    aux = aux->next;
+  }
+  print_frequently_words(ordered);
+
+  end_time();
+  freedon(node);
+}
+
+void freq_word(char* word, char* file){
+  start_time();
+
+  int total = 0;
+  Node node = mount(file, &total, NULL);
+  int c = count_word(node, word);
+  printf("Repetitions: %d\n", c);
+
+  end_time();
+  freedon(node);
 }
 
 void relevance_of_term(char* term, char**files, int file_count){
@@ -307,7 +300,7 @@ void relevance_of_term(char* term, char**files, int file_count){
   }
 
   double idf = inverse_frequency(file_count, count);
-
+  printf("IDF: %f\n", idf);
   for (i = 0; i < file_count; i++) {
     relevance = *(relevances+i);
     relevance->tfidf = relevance->tf * idf;
